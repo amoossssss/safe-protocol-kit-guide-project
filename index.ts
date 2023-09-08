@@ -16,6 +16,9 @@ import TimeHelper from './utils/TimeHelper';
 
 import 'dotenv/config';
 
+const RPC_URL = 'https://eth-goerli.public.blastapi.io';
+const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+
 /**
  * Section: {@link https://docs.safe.global/safe-core-aa-sdk/protocol-kit#initialize-signers-providers-and-ethadapter Initialize Signers, Providers, and EthAdapter}
  */
@@ -23,9 +26,6 @@ const initSignerAndAdapter = (): {
   ethAdapter: EthAdapter;
   signers: ethers.Wallet[];
 } => {
-  const RPC_URL = 'https://eth-goerli.public.blastapi.io';
-  const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-
   // Initialize signers.
   const owner1Signer = new ethers.Wallet(
     process.env.OWNER_1_PRIVATE_KEY!,
@@ -117,6 +117,7 @@ const sendEthToSmartAccount = async (
   safeAddress: string,
   walletOwner: ethers.Wallet,
 ) => {
+  const retryAmount = 120;
   const safeAmount = ethers.utils
     .parseUnits(amount.toString(), 'ether')
     .toHexString();
@@ -130,6 +131,16 @@ const sendEthToSmartAccount = async (
 
   console.log('Fundraising.');
   console.log(`Deposit Transaction: https://goerli.etherscan.io/tx/${tx.hash}`);
+
+  // Wait for the transaction to confirm.
+  console.log('Wait for the transaction to confirm...');
+  for (let retry = 0; retry < retryAmount; retry += 1) {
+    if (await provider.getTransactionReceipt(tx.hash)) {
+      console.log('Transaction confirmed.');
+      break;
+    }
+    await TimeHelper.timer(500);
+  }
 
   return;
 };

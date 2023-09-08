@@ -50,6 +50,7 @@ yarn start
 ```
 
 Successful execution console:
+
 ```bash
 yarn run v1.22.19
 $ ts-node index.ts
